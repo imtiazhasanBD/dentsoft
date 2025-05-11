@@ -4,29 +4,32 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { loginSchema, registerSchema } from "../lib/schemas";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import toast from "react-hot-toast";
-
+import { useUser } from "../context/UserContext";
 
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [showNotAvailable, setShowNotAvailable] = useState(false);
-  const router = useRouter();
-  
+  const { loginUser } = useUser();
 
   const form = useForm({
     resolver: zodResolver(isLogin ? loginSchema : registerSchema),
     defaultValues: {
       email: "",
       password: "",
-      ...(!isLogin && { name: "", role: "doctor" })
-    }
+      ...(!isLogin && { name: "", role: "doctor" }),
+    },
   });
 
   const onSubmit = async (data) => {
@@ -37,14 +40,10 @@ export function AuthForm() {
     }
 
     try {
-        const response = await axios.post(process.env.NEXT_PUBLIC_AUTH_LOGIN_PATH, data);
-        Cookies.set("token", response.data.token, { expires: 7 });
-        router.push("/");
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.message);
-      }
-    
-    console.log(data);
+      await loginUser(data);
+    } catch (err) {
+      toast.error(err);
+    }
   };
 
   return (
@@ -71,12 +70,16 @@ export function AuthForm() {
 
           {showNotAvailable && (
             <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
-              Registration is not available at this time. Please contact support.
+              Registration is not available at this time. Please contact
+              support.
             </div>
           )}
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-gray-600">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 text-gray-600"
+            >
               {!isLogin && (
                 <FormField
                   control={form.control}
@@ -114,7 +117,11 @@ export function AuthForm() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,13 +145,17 @@ export function AuthForm() {
                             <FormControl>
                               <RadioGroupItem value="doctor" />
                             </FormControl>
-                            <FormLabel className="font-normal">Doctor</FormLabel>
+                            <FormLabel className="font-normal">
+                              Doctor
+                            </FormLabel>
                           </FormItem>
                           <FormItem className="flex items-center space-x-2 space-y-0">
                             <FormControl>
                               <RadioGroupItem value="receptionist" />
                             </FormControl>
-                            <FormLabel className="font-normal">Receptionist</FormLabel>
+                            <FormLabel className="font-normal">
+                              Receptionist
+                            </FormLabel>
                           </FormItem>
                         </RadioGroup>
                       </FormControl>
@@ -154,7 +165,10 @@ export function AuthForm() {
                 />
               )}
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold">
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 font-bold"
+              >
                 {isLogin ? "Sign In" : "Register"}
               </Button>
             </form>
@@ -165,7 +179,9 @@ export function AuthForm() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              {isLogin ? "Need an account? Register" : "Already have an account? Sign In"}
+              {isLogin
+                ? "Need an account? Register"
+                : "Already have an account? Sign In"}
             </button>
           </div>
         </div>
