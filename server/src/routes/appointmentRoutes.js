@@ -69,6 +69,63 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
   }
 });
 
+// Get all appointments (optionally by date/name/others)
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, ...query } = req.query;
+    const skip = (page - 1) * limit;
 
+    // Case-insensitive search for name field
+    if (query.name) {
+      query.name = { $regex: query.name, $options: "i" };
+    }
+
+    const [appointments, total] = await Promise.all([
+      Appointment.find(query)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .sort({ date: 1 }), // Sort by appointment date
+      Appointment.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      data: appointments,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalResults: total,
+        resultsPerPage: parseInt(limit),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: "Server Error",
+    });
+  }
+});
+
+// Update appointment status
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const appt = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    res.json({ appt, message: "Appointment updated successfully!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete/Cancel appointment
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    await Appointment.findByIdAndDelete(req.params.id);
+    res.json({ message: "Appointment deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
