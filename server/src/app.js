@@ -15,6 +15,10 @@ connectDB();
 const authRoutes = require("./routes/authRoutes");
 app.use(process.env.AUTH_PATH, authRoutes);
 
+// Appointment routes
+const appointmentRoutes = require("./routes/appointmentRoutes")
+app.use(process.env.APPOINTMENT_PATH, appointmentRoutes);
+
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
