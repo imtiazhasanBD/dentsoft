@@ -2,21 +2,24 @@ import React from "react";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import { FaRegUserCircle } from "react-icons/fa";
 import { RiFullscreenExitFill } from "react-icons/ri";
+import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
 import RealTimeClock from "./RealTimeClock";
 import { useUser } from "../context/UserContext";
 import Image from "next/image";
 
-const Header = ({toggleSidebar}) => {
+const Header = ({toggleSidebar, collapsed}) => {
   const { user, loading, error } = useUser();
 
   console.log(user);
 
   return (
-    <div className="fixed inset-0 lg:left-72 z-20">
-      <div className="w-full md:py-4 p-4 md:px-10 bg-white flex justify-between items-center text-gray-600">
+    <div className={`h-16 fixed inset-0 ${collapsed ? 'lg:left-20' : 'lg:left-64'}  z-20 transition-all duration-300 ease-in-out`}>
+      <div className="w-full md:py-3 p-3 md:px-4 bg-white flex justify-between items-center text-gray-600">
         <div className="flex gap-2 items-center">
           {/* Toggle Button for Mobile */}
-          <button onClick={toggleSidebar} className="lg:hidden text-blue-600 p-2">☰</button>
+          <button onClick={toggleSidebar} className=" text-blue-600 p-2 text-xl">
+             {collapsed ? <GoSidebarCollapse/> : <GoSidebarExpand/>}
+            </button>
           <RealTimeClock />
         </div>
         {/* Notification and User Icons */}
