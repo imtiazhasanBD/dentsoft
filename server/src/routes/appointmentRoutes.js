@@ -6,6 +6,13 @@ const Patient = require("../models/Patient");
 const availableSlots = require("../utils/availableSlots");
 const checkAvailability = require("../middleware/checkAvailability");
 const formatTime = require("../utils/formatTime");
+const { startOfMonth } = require("date-fns/startOfMonth");
+const { startOfDay } = require("date-fns/startOfDay");
+const { endOfDay } = require("date-fns/endOfDay");
+const { startOfWeek } = require("date-fns/startOfWeek");
+const { endOfWeek } = require("date-fns/endOfWeek");
+const { endOfMonth } = require("date-fns/endOfMonth");
+const { format } = require("date-fns/format");
 
 // Create appointment
 router.post("/", authMiddleware, checkAvailability, async (req, res) => {
@@ -79,12 +86,15 @@ router.get("/", authMiddleware, async (req, res) => {
     if (query.name) {
       query.name = { $regex: query.name, $options: "i" };
     }
+    if (query.phone) {
+      query.phone = { $regex: query.phone, $options: "i" }; // Phone search (new)
+    }
 
     const [appointments, total] = await Promise.all([
       Appointment.find(query)
         .skip(skip)
         .limit(parseInt(limit))
-        .sort({ date: 1 }), // Sort by appointment date
+        .sort({ date: -1 }), // Sort by appointment date
       Appointment.countDocuments(query),
     ]);
 
@@ -103,6 +113,91 @@ router.get("/", authMiddleware, async (req, res) => {
       success: false,
       error: "Server Error",
     });
+  }
+});
+
+// Get all appointments stats count
+router.get("/stats", authMiddleware, async (req, res) => {
+  try {
+    const now = new Date();
+
+    const [todayCount, completedCount, weekCount, monthCount] =
+      await Promise.all([
+        // 1. Today's appointment count
+        Appointment.countDocuments({
+          date: {
+            $gte: format(startOfDay(now), "yyyy-MM-dd"),
+            $lte: format(endOfDay(now), "yyyy-MM-dd"),
+          },
+        }),
+
+        // 2. Total completed appointments
+        Appointment.countDocuments({
+          status: "completed",
+          date: {
+            $gte: format(startOfDay(now), "yyyy-MM-dd"),
+            $lte: format(endOfDay(now), "yyyy-MM-dd"),
+          },
+        }),
+
+        // 3. This week's appointment count
+        Appointment.countDocuments({
+          date: {
+            $gte: format(startOfWeek(now), "yyyy-MM-dd"),
+            $lte: format(endOfWeek(now), "yyyy-MM-dd"),
+          },
+        }),
+
+        // 4. This month's appointment count
+        Appointment.countDocuments({
+          date: {
+            $gte: format(startOfMonth(now), "yyyy-MM-dd"),
+            $lte: format(endOfMonth(now), "yyyy-MM-dd"),
+          },
+        }),
+      ]);
+
+    res.json({
+      stats: {
+        todayCount,
+        completedCount,
+        weekCount,
+        monthCount,
+      },
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error getting stats:", error);
+    res.status(500).json({ message: "Failed to get statistics", error });
+  }
+});
+
+// Get all today & latest appointments
+router.get("/tl", authMiddleware, async (req, res) => {
+  try {
+    const now = new Date();
+
+    const [todayAppointments, latestAppointments] = await Promise.all([
+      // today appointments
+      Appointment.find({
+        date: {
+          $gte: format(startOfDay(now), "yyyy-MM-dd"),
+          $lte: format(endOfDay(now), "yyyy-MM-dd"),
+        },
+      }),
+      
+      // Latest 5 appointments
+      Appointment.find().sort({ createdAt: -1 }).limit(5),
+    ]);
+
+    res.json({
+      todayAppointments,
+      latestAppointments,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error getting appointments:", error);
+    res.status(500).json({ message: "Failed to get appointments", error });
   }
 });
 

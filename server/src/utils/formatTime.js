@@ -1,4 +1,3 @@
-// utils/formatTime.js
 const { parse, format } = require('date-fns');
 
 function formatTime(inputTime) {
@@ -13,3 +12,4 @@ function formatTime(inputTime) {
 }
 
 module.exports = formatTime;
+
