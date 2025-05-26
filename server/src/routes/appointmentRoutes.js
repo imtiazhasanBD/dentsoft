@@ -13,13 +13,15 @@ const { startOfWeek } = require("date-fns/startOfWeek");
 const { endOfWeek } = require("date-fns/endOfWeek");
 const { endOfMonth } = require("date-fns/endOfMonth");
 const { format } = require("date-fns/format");
+const { parseISO } = require("date-fns/parseISO");
+const allTimeSlots = require("../utils/allTimeSlots");
 
 // Create appointment
 router.post("/", authMiddleware, checkAvailability, async (req, res) => {
   try {
     const { patientId, name, phone, email, date, time, reason } = req.body;
 
-    let appointmentData = { date, time: formatTime(time), reason };
+    let appointmentData = { date: format(date, "yyyy-MM-dd"), time: formatTime(time), reason };
 
     if (!date || !time) {
       return res
@@ -32,11 +34,13 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
     if (!isValidSlot) {
       return res.status(400).json({ error: "Select a valid time slot" });
     }
-    console.log(isValidSlot);
+    console.log(patientId);
 
     // Case 1: Direct booking with patientId
     if (patientId) {
-      const patient = await Patient.findById(patientId);
+      const patient = await Patient.findOne({ patientId: patientId });
+      console.log(patient);
+      
       if (!patient) {
         return res.status(404).json({ error: "Patient not found" });
       }
@@ -200,6 +204,35 @@ router.get("/tl", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to get appointments", error });
   }
 });
+
+// check available appointment time slots
+router.get("/available", authMiddleware, async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ error: "Date is required" });
+
+    const day = parseISO(date);
+
+    const appointments = await Appointment.find({
+      date: {
+        $gte: format(startOfDay(day), "yyyy-MM-dd"),
+        $lte: format(endOfDay(day), "yyyy-MM-dd"),
+      },
+    });
+
+    const bookedTimes = appointments.map((a) => a.time); // assumes time = "HH:MM AM/PM"
+console.log(bookedTimes);
+
+    const availableSlots = allTimeSlots(date).filter(
+      (slot) => !bookedTimes.includes(slot)
+    );
+
+    res.json({ date, availableSlots });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Update appointment status
 router.put("/:id", authMiddleware, async (req, res) => {

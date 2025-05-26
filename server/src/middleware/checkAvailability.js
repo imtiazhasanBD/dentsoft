@@ -1,11 +1,13 @@
+const { format } = require("date-fns/format");
 const Appointment = require("../models/Appointment");
 const Patient = require("../models/Patient");
 const formatTime = require("../utils/formatTime");
 
 const checkAvailability = async (req, res, next) => {
   try {
-    const { date, time, patientId, name, phone } = req.body;
-
+    const { time, patientId, name, phone } = req.body;
+    const date =  format(req.body.date, "yyyy-MM-dd");
+     
     // check phone number associated with existing patients
     if (phone) {
       const patient = await Patient.findOne({phone});
@@ -24,6 +26,8 @@ const checkAvailability = async (req, res, next) => {
         patientId,
         date,
       });
+      console.log(existingAppointment);
+      
       if (existingAppointment) {
         return res.status(400).json({
           error: "Patient already has an appointment on this date",

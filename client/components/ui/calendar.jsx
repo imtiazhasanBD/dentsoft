@@ -14,8 +14,7 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }) {
-  console.log(customStyle);
-  
+
   return (
     (<DayPicker
       showOutsideDays={showOutsideDays}
