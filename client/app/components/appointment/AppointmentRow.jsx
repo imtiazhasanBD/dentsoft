@@ -7,9 +7,10 @@ import {
 import { Edit, Trash2, UserPlus } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { DeleteAppointment } from "./DeleteAppointment";
+import { EditAppointmentDialog } from "./EditAppointmentDialog";
 
 export function AppointmentRow({ appt }) {
-
   return (
     <TableRow>
       <TableCell>{appt.name}</TableCell>
@@ -32,7 +33,7 @@ export function AppointmentRow({ appt }) {
         </TableCell>
       </TableCell>
       <TableCell>
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-end items-center">
           {/* Tooltip for Add Patient */}
           {!appt.patientId && (
             <TooltipProvider>
@@ -50,29 +51,14 @@ export function AppointmentRow({ appt }) {
           {/* Tooltip for Edit */}
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="cursor-pointer text-blue-600"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Edit</TooltipContent>
+              <EditAppointmentDialog appointment={appt} />
             </Tooltip>
           </TooltipProvider>
 
           {/* Tooltip for Delete */}
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="text-red-600"
-                  onClick={() => setIsDeleteOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 cursor-pointer" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Delete</TooltipContent>
+              <DeleteAppointment appointmentId={appt._id} />
             </Tooltip>
           </TooltipProvider>
         </div>
