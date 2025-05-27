@@ -1,4 +1,5 @@
-"use client"
+"use client";
+import { useSocket } from "@/app/context/socket";
 import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -11,27 +12,38 @@ import {
 import { useEffect, useState } from "react";
 
 const StatCard = () => {
-
+  const { useAppointmentSocket } = useSocket();
   const [stats, setStats] = useState(null);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_APPOINTMENT}/stats`, {
-          headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`,
-          },
-        });
-        console.log(res.data.stats); 
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_APPOINTMENT}/stats`,
+          {
+            headers: {
+              Authorization: `Bearer ${Cookies.get("token")}`,
+            },
+          }
+        );
+        console.log(res.data.stats);
         setStats(res.data.stats);
+        setIsUpdate(false);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }
     };
 
     fetchAppointments();
-  }, []);
+  }, [isUpdate]);
 
+    // appointment socket handler
+  useAppointmentSocket((type) => {
+    if (type === "created" || type === "updated" || type === "deleted") {
+      setIsUpdate(true);
+    }
+  });
 
   const statsData = [
     {

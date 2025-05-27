@@ -23,9 +23,13 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import CustomPagination from "../CustomPagination";
 import TableRowSkeleton from "../skeleton/TableRowSkeleton";
+import { useSocket } from "@/app/context/socket";
 
 export function AppointmentsTable() {
   const [appointments, setAppointments] = useState(null);
+  const { useAppointmentSocket } = useSocket();
+  const [isUpdate, setIsUpdate] = useState(false);
+
   // State for filters and pagination
   const [filters, setFilters] = useState({
     name: "",
@@ -67,10 +71,18 @@ export function AppointmentsTable() {
       // Update appointments and pagination
       setAppointments(res.data.data);
       setPagination(res.data.pagination);
+      setIsUpdate(false);
     } catch (error) {
       console.error("Error fetching appointments:", error);
     }
   };
+
+    // appointment socket handler
+  useAppointmentSocket((type) => {
+    if (type === "created" || type === "updated" || type === "deleted") {
+      setIsUpdate(true);
+    }
+  });
 
   // Handle filter changes
   const handleFilterChange = (e) => {
@@ -99,7 +111,7 @@ export function AppointmentsTable() {
   // Call fetchAppointments whenever filters or pagination changes
   useEffect(() => {
     fetchAppointments();
-  }, [filters, pagination?.currentPage]);
+  }, [filters, pagination?.currentPage, isUpdate]);
 
   if (appointments?.data === 0) {
     return <div>Loading........</div>;
@@ -109,16 +121,16 @@ export function AppointmentsTable() {
     <div className="space-y-4">
       {/* Search & Filter Bar */}
       <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1 md:pr-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              className="pl-10"
-              name="name"
-              placeholder="Search by name or phone number"
-              value={filters.name || filters.phone}
-              onChange={handleFilterChange}
-            />
-          </div>
+        <div className="relative flex-1 md:pr-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-10"
+            name="name"
+            placeholder="Search by name or phone number"
+            value={filters.name || filters.phone}
+            onChange={handleFilterChange}
+          />
+        </div>
         <div className="flex flex-wrap justify-end gap-2">
           <select
             name="status"

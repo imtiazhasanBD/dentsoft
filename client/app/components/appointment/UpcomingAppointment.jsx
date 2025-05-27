@@ -1,5 +1,6 @@
-"use client"
+"use client";
 import AppointmentList from "@/app/components/appointment/AppointmentList";
+import { useSocket } from "@/app/context/socket";
 import { getTomorrow, parseTime } from "@/app/utils/date";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
@@ -9,8 +10,10 @@ import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 
 const UpcomingAppointment = () => {
+  const { useAppointmentSocket } = useSocket();
   const [upcomingAppointments, setUpcomingAppointments] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getTomorrow());
+  const [isUpdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -26,17 +29,26 @@ const UpcomingAppointment = () => {
             },
           }
         );
-        console.log(res.data); // or setAppointments(res.data.data)
-        setUpcomingAppointments(res.data.data.sort((a, b) => parseTime(a.time) - parseTime(b.time)));
+        setUpcomingAppointments(
+          res.data.data.sort((a, b) => parseTime(a.time) - parseTime(b.time))
+        );
+        setIsUpdate(false);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }
     };
 
     fetchAppointments();
-  }, [selectedDate]);
+  }, [selectedDate, isUpdate]);
 
   console.log(selectedDate);
+
+    // appointment socket handler
+  useAppointmentSocket((type) => {
+    if (type === "created" || type === "updated" || type === "deleted") {
+      setIsUpdate(true);
+    }
+  });
 
   return (
     <>

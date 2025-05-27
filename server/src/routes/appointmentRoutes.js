@@ -21,7 +21,11 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
   try {
     const { patientId, name, phone, email, date, time, reason } = req.body;
 
-    let appointmentData = { date: format(date, "yyyy-MM-dd"), time: formatTime(time), reason };
+    let appointmentData = {
+      date: format(date, "yyyy-MM-dd"),
+      time: formatTime(time),
+      reason,
+    };
 
     if (!date || !time) {
       return res
@@ -40,7 +44,7 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
     if (patientId) {
       const patient = await Patient.findOne({ patientId: patientId });
       console.log(patient);
-      
+
       if (!patient) {
         return res.status(404).json({ error: "Patient not found" });
       }
@@ -72,6 +76,8 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
     }
 
     const appointment = await Appointment.create(appointmentData);
+    // Emit to all clients
+    req.app.get("io").emit("appointment:created", appointment);
     res
       .status(201)
       .json({ appointment, message: "Appointment created successfully!" });
@@ -189,7 +195,7 @@ router.get("/tl", authMiddleware, async (req, res) => {
           $lte: format(endOfDay(now), "yyyy-MM-dd"),
         },
       }),
-      
+
       // Latest 5 appointments
       Appointment.find().sort({ createdAt: -1 }).limit(5),
     ]);
@@ -221,7 +227,7 @@ router.get("/available", authMiddleware, async (req, res) => {
     });
 
     const bookedTimes = appointments.map((a) => a.time); // assumes time = "HH:MM AM/PM"
-console.log(bookedTimes);
+    console.log(bookedTimes);
 
     const availableSlots = allTimeSlots(date).filter(
       (slot) => !bookedTimes.includes(slot)
@@ -233,14 +239,12 @@ console.log(bookedTimes);
   }
 });
 
-
 // Update appointment status
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, checkAvailability, async (req, res) => {
   try {
-    const appt = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    res.json({ appt, message: "Appointment updated successfully!" });
+    const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    req.app.get("io").emit("appointment:updated", updated);
+    res.json({ updated, message: "Appointment updated successfully!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -249,7 +253,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
 // Delete/Cancel appointment
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    await Appointment.findByIdAndDelete(req.params.id);
+    const removed = await Appointment.findByIdAndDelete(req.params.id);
+    req.app.get("io").emit("appointment:deleted", removed._id);
     res.json({ message: "Appointment deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

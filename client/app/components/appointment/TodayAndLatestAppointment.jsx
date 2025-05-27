@@ -5,10 +5,13 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import TodayAppointmentList from "./TodayAppointmentList";
+import { useSocket } from "@/app/context/socket";
 
 const TodayAndLatestAppointment = () => {
+  const { useAppointmentSocket } = useSocket();
   const [todayAppointments, setTodayAppointments] = useState(null);
   const [latestAppointments, setLatestAppointments] = useState(null);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -24,13 +27,21 @@ const TodayAndLatestAppointment = () => {
         console.log(res.data);
         setTodayAppointments(res.data.todayAppointments);
         setLatestAppointments(res.data.latestAppointments);
+        setIsUpdate(false);
       } catch (error) {
         console.error("Error fetching appointments:", error);
       }
     };
 
     fetchAppointments();
-  }, []);
+  }, [isUpdate]);
+
+    // appointment socket handler
+  useAppointmentSocket((type) => {
+    if (type === "created" || type === "updated" || type === "deleted") {
+      setIsUpdate(true);
+    }
+  });
 
   return (
     <>
@@ -41,7 +52,7 @@ const TodayAndLatestAppointment = () => {
             "max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 bg-white py-4 px-6"
           }
         >
-         <TodayAppointmentList todayAppointments={todayAppointments}/>
+          <TodayAppointmentList todayAppointments={todayAppointments} />
         </div>
       </Card>
 

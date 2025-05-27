@@ -5,6 +5,7 @@ import WithLayout from "./components/WithLayout";
 import { UserProvider } from "./context/UserContext";
 import { Suspense } from "react";
 import Loading from "./loading";
+import { SocketProvider } from "./context/socket";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,13 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Toaster position="bottom-right" />
-        <UserProvider>
-          <Suspense fallback={<Loading/>}>
-            <WithLayout children={children} />
-          </Suspense>
-        </UserProvider>
+        <SocketProvider>
+          <UserProvider>
+            <Suspense fallback={<Loading />}>
+              <WithLayout children={children} />
+            </Suspense>
+          </UserProvider>
+        </SocketProvider>
       </body>
     </html>
   );
