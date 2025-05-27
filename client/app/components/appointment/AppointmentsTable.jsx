@@ -77,10 +77,14 @@ export function AppointmentsTable() {
     }
   };
 
-    // appointment socket handler
-  useAppointmentSocket((type) => {
-    if (type === "created" || type === "updated" || type === "deleted") {
+  // appointment socket handler
+  useAppointmentSocket((type, data) => {
+    if (type === "created" || type === "deleted") {
       setIsUpdate(true);
+    } else if (type === "updated") {
+      setAppointments((prev) =>
+        prev.map((appt) => (appt._id === data._id ? data : appt))
+      );
     }
   });
 
