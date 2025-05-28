@@ -6,15 +6,10 @@ const Patient = require("../models/Patient");
 const availableSlots = require("../utils/availableSlots");
 const checkAvailability = require("../middleware/checkAvailability");
 const formatTime = require("../utils/formatTime");
-const { startOfMonth } = require("date-fns/startOfMonth");
-const { startOfDay } = require("date-fns/startOfDay");
-const { endOfDay } = require("date-fns/endOfDay");
-const { startOfWeek } = require("date-fns/startOfWeek");
-const { endOfWeek } = require("date-fns/endOfWeek");
-const { endOfMonth } = require("date-fns/endOfMonth");
-const { format } = require("date-fns/format");
+const { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, subMonths } = require('date-fns');
 const { parseISO } = require("date-fns/parseISO");
 const allTimeSlots = require("../utils/allTimeSlots");
+const calculateComparison = require("../utils/calculateComparison");
 
 // Create appointment
 router.post("/", authMiddleware, checkAvailability, async (req, res) => {
@@ -126,59 +121,127 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Get all appointments stats count
+// Get all appointments stats count with comparisons
 router.get("/stats", authMiddleware, async (req, res) => {
   try {
     const now = new Date();
 
-    const [todayCount, completedCount, weekCount, monthCount] =
-      await Promise.all([
-        // 1. Today's appointment count
-        Appointment.countDocuments({
-          date: {
-            $gte: format(startOfDay(now), "yyyy-MM-dd"),
-            $lte: format(endOfDay(now), "yyyy-MM-dd"),
-          },
-        }),
+    // --- All Queries ---
+    const [
+      // Current Period Counts
+      todayCount,
+      completedTodayCount,
+      weekCount,
+      monthCount,
 
-        // 2. Total completed appointments
-        Appointment.countDocuments({
-          status: "completed",
-          date: {
-            $gte: format(startOfDay(now), "yyyy-MM-dd"),
-            $lte: format(endOfDay(now), "yyyy-MM-dd"),
-          },
-        }),
+      // Previous Period Counts
+      yesterdayCount,
+      completedYesterdayCount,
+      lastWeekCount,
+      lastMonthCount,
+    ] = await Promise.all([
+      // 1. Today's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfDay(now), "yyyy-MM-dd"),
+          $lte: format(endOfDay(now), "yyyy-MM-dd"),
+        },
+      }),
 
-        // 3. This week's appointment count
-        Appointment.countDocuments({
-          date: {
-            $gte: format(startOfWeek(now), "yyyy-MM-dd"),
-            $lte: format(endOfWeek(now), "yyyy-MM-dd"),
-          },
-        }),
+      // 2. Total completed appointments for today
+      Appointment.countDocuments({
+        status: "completed",
+        date: {
+          $gte: format(startOfDay(now), "yyyy-MM-dd"),
+          $lte: format(endOfDay(now), "yyyy-MM-dd"),
+        },
+      }),
 
-        // 4. This month's appointment count
-        Appointment.countDocuments({
-          date: {
-            $gte: format(startOfMonth(now), "yyyy-MM-dd"),
-            $lte: format(endOfMonth(now), "yyyy-MM-dd"),
-          },
-        }),
-      ]);
+      // 3. This week's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfWeek(now), "yyyy-MM-dd"),
+          $lte: format(endOfWeek(now), "yyyy-MM-dd"),
+        },
+      }),
+
+      // 4. This month's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfMonth(now), "yyyy-MM-dd"),
+          $lte: format(endOfMonth(now), "yyyy-MM-dd"),
+        },
+      }),
+
+  // 5. Yesterday's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfDay(subDays(now, 1)), "yyyy-MM-dd"),
+          $lte: format(endOfDay(subDays(now, 1)), "yyyy-MM-dd"),
+        },
+      }),
+
+  // 6. Total completed appointments for yesterday
+      Appointment.countDocuments({
+        status: "completed",
+        date: {
+          $gte: format(startOfDay(subDays(now, 1)), "yyyy-MM-dd"),
+          $lte: format(endOfDay(subDays(now, 1)), "yyyy-MM-dd"),
+        },
+      }),
+
+  // 7. Last week's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfWeek(subWeeks(now, 1)), "yyyy-MM-dd"),
+          $lte: format(endOfWeek(subWeeks(now, 1)), "yyyy-MM-dd"),
+        },
+      }),
+
+   // 8. Last month's appointment count
+      Appointment.countDocuments({
+        date: {
+          $gte: format(startOfMonth(subMonths(now, 1)), "yyyy-MM-dd"),
+          $lte: format(endOfMonth(subMonths(now, 1)), "yyyy-MM-dd"),
+        },
+      }),
+    ]);
+
+    // --- Calculate Comparisons ---
+    const todayComparison = calculateComparison(todayCount, yesterdayCount);
+    const completedComparison = calculateComparison(
+      completedTodayCount,
+      completedYesterdayCount
+    );
+    const weekComparison = calculateComparison(weekCount, lastWeekCount);
+    const monthComparison = calculateComparison(monthCount, lastMonthCount);
 
     res.json({
       stats: {
-        todayCount,
-        completedCount,
-        weekCount,
-        monthCount,
+        today: {
+          count: todayCount,
+          comparison: todayComparison,
+        },
+        completed: {
+          count: completedTodayCount,
+          comparison: completedComparison,
+        },
+        week: {
+          count: weekCount,
+          comparison: weekComparison,
+        },
+        month: {
+          count: monthCount,
+          comparison: monthComparison,
+        },
       },
       success: true,
     });
   } catch (error) {
     console.error("Error getting stats:", error);
-    res.status(500).json({ message: "Failed to get statistics", error });
+    res
+      .status(500)
+      .json({ message: "Failed to get statistics", error: error.message });
   }
 });
 
