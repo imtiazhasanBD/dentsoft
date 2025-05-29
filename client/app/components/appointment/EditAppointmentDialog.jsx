@@ -147,11 +147,12 @@ export function EditAppointmentDialog({ appointment }) {
               <Button
                 type="button"
                 variant="outline"
+                className={"cursor-pointer"}
                 onClick={() => setIsEditOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit" className={"bg-blue-700 hover:bg-blue-600"}>Save Changes</Button>
+              <Button type="submit" className={"bg-blue-700 hover:bg-blue-600 cursor-pointer"}>Save Changes</Button>
             </div>
           </form>
         </DialogContent>

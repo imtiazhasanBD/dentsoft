@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
         <SocketProvider>
           <UserProvider>
             <Suspense fallback={<Loading />}>
-              <WithLayout children={children} />
+              <WithLayout> {children} </WithLayout>
             </Suspense>
           </UserProvider>
         </SocketProvider>

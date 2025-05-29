@@ -197,7 +197,7 @@ export default function CreateAppointment() {
               )}
             />
 
-            <Button type="submit" className={"bg-blue-600 hover:bg-blue-700"}>
+            <Button type="submit" className={"bg-blue-600 hover:bg-blue-700 cursor-pointer"}>
               Confirm Appointment
             </Button>
           </form>
