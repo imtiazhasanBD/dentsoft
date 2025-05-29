@@ -5,10 +5,9 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import TodayAppointmentList from "./TodayAppointmentList";
-import { useSocket } from "@/app/context/socket";
+import { useAppointmentSocket } from "@/app/hooks/useAppointmentSocket";
 
 const TodayAndLatestAppointment = () => {
-  const { useAppointmentSocket } = useSocket();
   const [todayAppointments, setTodayAppointments] = useState(null);
   const [latestAppointments, setLatestAppointments] = useState(null);
   const [isUpdate, setIsUpdate] = useState(false);
@@ -34,6 +33,18 @@ const TodayAndLatestAppointment = () => {
     };
 
     fetchAppointments();
+
+  // Midnight auto-refresh
+  const midnightRefresh = () => {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
+      setIsUpdate(true);
+    }
+  };
+
+  const interval = setInterval(midnightRefresh, 60000);
+  return () => clearInterval(interval);
+  
   }, [isUpdate]);
 
     // appointment socket handler

@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import StatCardSkeleton from "../skeleton/StatCardSkeleton";
+import { useAppointmentSocket } from "@/app/hooks/useAppointmentSocket";
 
 const StatCard = () => {
-  const { useAppointmentSocket } = useSocket();
   const [stats, setStats] = useState(null);
   const [isUpdate, setIsUpdate] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +44,18 @@ const StatCard = () => {
     };
 
     fetchAppointments();
+
+    // Midnight auto-refresh
+    const midnightRefresh = () => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0) {
+        setIsUpdate(true);
+      }
+    };
+
+    const interval = setInterval(midnightRefresh, 60000);
+    return () => clearInterval(interval);
+    
   }, [isUpdate]);
 
   // appointment socket handler
@@ -87,10 +99,10 @@ const StatCard = () => {
       comparison: stats?.month?.comparison,
     },
   ];
-  
- // Render Custom Skeleton
+
+  // Render Custom Skeleton
   if (isLoading) {
-    return <StatCardSkeleton/>;
+    return <StatCardSkeleton />;
   }
 
   return (

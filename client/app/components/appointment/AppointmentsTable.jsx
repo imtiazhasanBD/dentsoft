@@ -23,11 +23,10 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import CustomPagination from "../CustomPagination";
 import TableRowSkeleton from "../skeleton/TableRowSkeleton";
-import { useSocket } from "@/app/context/socket";
+import { useAppointmentSocket } from "@/app/hooks/useAppointmentSocket";
 
 export function AppointmentsTable() {
   const [appointments, setAppointments] = useState(null);
-  const { useAppointmentSocket } = useSocket();
   const [isUpdate, setIsUpdate] = useState(false);
 
   // State for filters and pagination

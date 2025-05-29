@@ -1,6 +1,6 @@
 "use client";
 import AppointmentList from "@/app/components/appointment/AppointmentList";
-import { useSocket } from "@/app/context/socket";
+import { useAppointmentSocket } from "@/app/hooks/useAppointmentSocket";
 import { getTomorrow, parseTime } from "@/app/utils/date";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,6 @@ import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 
 const UpcomingAppointment = () => {
-  const { useAppointmentSocket } = useSocket();
   const [upcomingAppointments, setUpcomingAppointments] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getTomorrow());
   const [isUpdate, setIsUpdate] = useState(false);
@@ -39,11 +38,23 @@ const UpcomingAppointment = () => {
     };
 
     fetchAppointments();
+
+    // Midnight auto-refresh
+    const midnightRefresh = () => {
+      const now = new Date();
+      if (now.getHours() === 0 && now.getMinutes() === 0) {
+        setIsUpdate(true);
+      }
+    };
+
+    const interval = setInterval(midnightRefresh, 60000);
+    return () => clearInterval(interval);
+    
   }, [selectedDate, isUpdate]);
 
   console.log(selectedDate);
 
-    // appointment socket handler
+  // appointment socket handler
   useAppointmentSocket((type) => {
     if (type === "created" || type === "updated" || type === "deleted") {
       setIsUpdate(true);
