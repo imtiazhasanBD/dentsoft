@@ -19,6 +19,10 @@ app.use(process.env.AUTH_PATH, authRoutes);
 const appointmentRoutes = require("./routes/appointmentRoutes")
 app.use(process.env.APPOINTMENT_PATH, appointmentRoutes);
 
+// Patients routes
+const PatientRoutes = require("./routes/patientRoutes")
+app.use(process.env.PATIENT_PATH, PatientRoutes);
+
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });

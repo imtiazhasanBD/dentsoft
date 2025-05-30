@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
+const Counter = require("./Counter");
 
 const patientSchema = new mongoose.Schema(
   {
-    patientId: {type: String, unique: true, required: true},
+    patientId: {type: String, unique: true, index:true},
     name: String,
     age: Number,
     gender: String,
@@ -26,6 +27,23 @@ const patientSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to generate patientId
+patientSchema.pre('save', async function(next) {
+  if (!this.isNew) return next();
+  
+  try {
+    const counter = await Counter.findByIdAndUpdate(
+      { _id: 'patientId' },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    this.patientId = 'P' + String(counter.seq).padStart(3, '0');
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
