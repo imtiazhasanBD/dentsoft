@@ -21,3 +21,35 @@ export const appointmentSchema = z.object({
   time: z.string().nonempty("Time is required."),
   reason: z.string().min(5, "Reason too short")
 });
+
+
+export const patientFormSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Name must be at least 3 characters.")
+    .max(100, "Name cannot exceed 100 characters.")
+    .trim(),
+  age: z.coerce
+    .number()
+    .min(0, "Age cannot be negative.")
+    .max(120, "Age seems too high.")
+    .int("Age must be a whole number."),
+  blood_group: z
+    .enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], {
+      required_error: "Please select a blood group.",
+    })
+    .optional(),
+  gender: z.enum(["Male", "Female", "Other"], {
+    required_error: "Please select a gender.",
+  }),
+  phone: z
+    .string()
+    .regex(/^\d{11}$/, "Phone number must be exactly 11 digits."),
+  address: z
+    .string()
+    .trim()
+    .min(10, "Address must be at least 10 characters.")
+    .max(250, "Address cannot exceed 250 characters.")
+    .optional()
+    .or(z.literal("")),
+});

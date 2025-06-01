@@ -6,7 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 // Create a new patient 
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { patientId, name, age, gender, phone, address } = req.body;
+    const { patientId, name, age, gender, blood_group, phone, address } = req.body;
 
     const exists = await Patient.findOne({ patientId});
     
@@ -18,8 +18,9 @@ router.post("/", authMiddleware, async (req, res) => {
       patientId,
       name,
       age,
-      gender,
       phone,
+      gender,
+      blood_group,
       address,
     });
 

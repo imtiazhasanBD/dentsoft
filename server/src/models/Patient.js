@@ -6,8 +6,9 @@ const patientSchema = new mongoose.Schema(
     patientId: {type: String, unique: true, index:true},
     name: String,
     age: Number,
-    gender: String,
     phone: String,
+    blood_group: String,
+    gender: String,
     address: String,
     visits: [
       {
