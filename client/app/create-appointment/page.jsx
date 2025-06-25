@@ -32,6 +32,7 @@ export default function CreateAppointment() {
   const form = useForm({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
+      _id: undefined,
       patientId: undefined, 
       name: "",
       phone: "",
@@ -42,6 +43,7 @@ export default function CreateAppointment() {
   });
 
   const handlePatientSelect = (patient) => {
+    form.setValue("_id", patient._id); 
     form.setValue("patientId", patient.patientId); 
     form.setValue("name", patient.name); 
     form.setValue("phone", patient.phone);
@@ -50,6 +52,7 @@ export default function CreateAppointment() {
   const isPatient = () => {
     setIsNewPatient(!isNewPatient);
     form.reset({
+      _id: undefined,
       patientId: undefined,
       name: "",
       phone: "",
@@ -79,6 +82,7 @@ export default function CreateAppointment() {
         },
       });
       form.reset({
+        _id: undefined, 
         patientId: undefined, 
         name: "",
         phone: "",

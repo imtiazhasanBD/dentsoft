@@ -14,6 +14,7 @@ export const registerSchema = z.object({
 
 
 export const appointmentSchema = z.object({
+  _id: z.string().optional(),
   patientId: z.string().optional(), // For existing patients
   name: z.string().min(3, "Name too short"),
   phone: z.string().regex(/^\d{11}$/, "Phone must be 11 digits"),
