@@ -39,7 +39,7 @@ export default function HistoryTabsSection({
           </TabsList>
           <TabsContent value="treatments">
             <TreatmentLog
-              treatments={mockPatient.treatments}
+              treatments={patientData.treatments}
               onEditTreatment={onEditTreatment}
             />
           </TabsContent>

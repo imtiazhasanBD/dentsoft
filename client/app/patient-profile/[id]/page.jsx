@@ -11,17 +11,45 @@ import PatientDetailsCard from "@/app/components/patient-profile/PatientDetailsC
 import TeethChartSection from "@/app/components/patient-profile/TeethChartSection";
 import HistoryTabsSection from "@/app/components/patient-profile/HistoryTabsSection";
 import QuickActionsPanel from "@/app/components/patient-profile/QuickActionsPanel";
+import { useParams } from "next/navigation";
+import Cookies from "js-cookie";
+import axios from "axios";
+import TreatmentDialog from "@/app/components/patient-profile/TreatmentDialog";
+import toast from "react-hot-toast";
 
 export default function DentalProfilePage() {
-   const [patientData, setPatientData] = useState(mockPatient);
+  const [patientData, setPatientData] = useState(null);
   const [selectedTeeth, setSelectedTeeth] = useState([]);
+  const [isTreatmentDialogOpen, setIsTreatmentDialogOpen] = useState(false);
+  const [currentTreatment, setCurrentTreatment] = useState(null);
+  const { id } = useParams();
+
 
   useEffect(() => {
-    if (patientData && !patientData.teeth) {
-        const initialPermanentTeeth = initializeTeethState(PERMANENT_TEETH);
-        setPatientData(prev => ({ ...prev, teeth: initialPermanentTeeth }));
-    }
-  }, [patientData.treatments]);
+    const fetchPatientAndInitializeTeeth = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_PATIENT}/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${Cookies.get("token")}`,
+            },
+          }
+        );
+        console.log("Fetched patient data:", res.data);
+        if (res.data && !res.data.teeth) {
+          const initialPermanentTeeth = initializeTeethState(PERMANENT_TEETH);
+          setPatientData({ ...res.data, teeth: initialPermanentTeeth });
+        } else {
+          setPatientData(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch patient data:", error);
+      }
+    };
+
+    fetchPatientAndInitializeTeeth();
+  }, [id]);
 
   const handleToothSelect = (toothNumber) => {
     setSelectedTeeth((prevSelectedTeeth) => {
@@ -38,18 +66,60 @@ export default function DentalProfilePage() {
     setIsTreatmentDialogOpen(true);
   };
 
+  const handleSaveTreatment = async (treatmentData) => {
+
+    console.log(currentTreatment?._id);
+    
+    try {
+      const promise = currentTreatment
+        ? axios.put(
+            `${process.env.NEXT_PUBLIC_PATIENT}/treatment/${currentTreatment._id}`,
+            treatmentData,
+            {
+              headers: {
+                Authorization: `Bearer ${Cookies.get("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          )
+        : axios.post(
+            `${process.env.NEXT_PUBLIC_PATIENT}/${patientData._id}/treatments`,
+            treatmentData,
+            {
+              headers: {
+                Authorization: `Bearer ${Cookies.get("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+      const response = await toast.promise(promise, {
+        loading: currentTreatment? "Updating treatment..." : "Creating treatment...",
+        success: currentTreatment? "Treatment updated successfully!" : "Treatment created successfully!",
+        error: (err) => {
+          return (
+            <b>
+              {err.response?.data?.error || currentTreatment? "Could not update treatment." : "Could not create treatment."}
+            </b>
+          );
+        },
+      });
+      console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating treatment:", error);
+      throw error;
+    }
+  };
+
   const handleEditTreatmentFromLog = (treatmentToEdit) => {
     setSelectedTeeth(treatmentToEdit.toothNumbers || []);
     setCurrentTreatment(treatmentToEdit);
     setIsTreatmentDialogOpen(true);
   };
 
-
   const handleUpdatePatientData = (updatedData) => {
     setPatientData(updatedData);
   };
-
-
 
   if (!patientData || !patientData.teeth) {
     return (
@@ -58,7 +128,7 @@ export default function DentalProfilePage() {
       </div>
     );
   }
-  console.log(patientData);
+  console.log(currentTreatment?._id);
 
   return (
     <>
@@ -79,11 +149,27 @@ export default function DentalProfilePage() {
 
         <div className="lg:col-span-1 space-y-6 max-w-60">
           <QuickActionsPanel
-            patientData={patientData}
+            patientData={mockPatient}
             onUpdatePatientData={handleUpdatePatientData}
           />
         </div>
       </main>
+
+      {isTreatmentDialogOpen && (
+        <TreatmentDialog
+          open={isTreatmentDialogOpen}
+          onOpenChange={(isOpen) => {
+            setIsTreatmentDialogOpen(isOpen);
+            if (!isOpen) {
+              setSelectedTeeth([]);
+              setCurrentTreatment(null);
+            }
+          }}
+          toothNumbers={selectedTeeth}
+          existingTreatment={currentTreatment}
+          onSaveTreatment={handleSaveTreatment}
+        />
+      )}
     </>
   );
 }

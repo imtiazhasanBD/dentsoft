@@ -1,10 +1,11 @@
 const express = require("express");
 const Treatment = require("../models/Treatment");
 const Patient = require("../models/Patient");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post('/:patientId/treatments', async (req, res) => {
+router.post('/:patientId/treatments', authMiddleware, async (req, res) => {
   try {
     const { patientId } = req.params;
     const { totalCost } = req.body;
@@ -44,6 +45,26 @@ router.post('/:patientId/treatments', async (req, res) => {
   }
 });
 
+
+// Update a Treatment
+router.put("/treatment/:id", authMiddleware, async (req, res) => {
+  console.log(req.params.id);
+  
+  try {
+    const updated = await Treatment.findOneAndUpdate(
+      { _id: req.params.id },
+      req.body,
+      { new: true }
+    );
+    if (!updated)
+      return res
+        .status(404)
+        .json({ message: "Treatment not found" });
+    res.json({ updated, message: "Treatment updated successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Get all treatments 
 router.get("/treatments/all", async (req, res) => {
