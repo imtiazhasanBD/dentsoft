@@ -52,7 +52,9 @@ router.get("/", authMiddleware, async (req, res) => {
 // Get a single patient by ID
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const patient = await Patient.findOne({ patientId: req.params.id});
+    const patient = await Patient.findOne({ patientId: req.params.id})
+     .populate("treatments")
+     
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);
   } catch (err) {

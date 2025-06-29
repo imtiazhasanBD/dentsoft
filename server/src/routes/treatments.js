@@ -38,7 +38,7 @@ router.post('/:patientId/treatments', async (req, res) => {
       }
     );
 
-    res.status(201).json(treatment);
+    res.status(201).json({ treatment, message: "Treatment created successfully!" });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
