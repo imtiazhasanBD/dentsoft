@@ -16,6 +16,8 @@ const treatmentSchema = new mongoose.Schema({
     enum: ["planned", "in-progress", "completed", "cancelled"],
     default: "planned",
   },
+  generalTests: [String],
+  medicalDrugHistory: String,
   toothSpecificDetails: [
     {
       toothNumber: String,

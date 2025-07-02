@@ -16,6 +16,7 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import TreatmentDialog from "@/app/components/patient-profile/TreatmentDialog";
 import toast from "react-hot-toast";
+import PrescriptionDialog from "@/app/components/patient-profile/PrescriptionDialog";
 
 export default function DentalProfilePage() {
   const [patientData, setPatientData] = useState(null);
@@ -23,6 +24,8 @@ export default function DentalProfilePage() {
   const [isTreatmentDialogOpen, setIsTreatmentDialogOpen] = useState(false);
   const [currentTreatment, setCurrentTreatment] = useState(null);
   const { id } = useParams();
+  const [isPrescriptionSheetOpen, setIsPrescriptionSheetOpen] = useState(false);
+  const [prescriptionContext, setPrescriptionContext] = useState(null);
 
 
   useEffect(() => {
@@ -121,6 +124,53 @@ export default function DentalProfilePage() {
     setPatientData(updatedData);
   };
 
+const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
+    const existingPrescription =
+      patientData.prescriptions.find(
+        (p) => p.id === treatmentForPrescription.prescriptionId
+      ) ||
+      patientData.prescriptions.find(
+        (p) => p.treatmentId === treatmentForPrescription.id
+      );
+    setPrescriptionContext({
+      treatment: treatmentForPrescription,
+      existingPrescription,
+    });
+    setIsPrescriptionSheetOpen(true);
+    setIsTreatmentDialogOpen(false);
+  };
+
+  const handleSavePrescription = (prescriptionData) => {
+    setPatientData((prevData) => {
+      const prescriptionExists = prevData.prescriptions.some(
+        (p) => p.id === prescriptionData.id
+      );
+      let updatedPrescriptions;
+      if (prescriptionExists) {
+        updatedPrescriptions = prevData.prescriptions.map((p) =>
+          p.id === prescriptionData.id ? prescriptionData : p
+        );
+      } else {
+        updatedPrescriptions = [...prevData.prescriptions, prescriptionData];
+      }
+
+      // Link prescriptionId back to the treatment
+      const updatedTreatments = prevData.treatments.map((t) =>
+        t.id === prescriptionData.treatmentId
+          ? { ...t, prescriptionId: prescriptionData.id }
+          : t
+      );
+
+      return {
+        ...prevData,
+        prescriptions: updatedPrescriptions,
+        treatments: updatedTreatments,
+      };
+    });
+    setIsPrescriptionSheetOpen(false);
+    setPrescriptionContext(null);
+  };
+
   if (!patientData || !patientData.teeth) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -144,6 +194,7 @@ export default function DentalProfilePage() {
           <HistoryTabsSection
             patientData={patientData}
             onEditTreatment={handleEditTreatmentFromLog}
+            onOpenPrescription={handleOpenPrescriptionSheet}
           />
         </div>
 
@@ -151,6 +202,7 @@ export default function DentalProfilePage() {
           <QuickActionsPanel
             patientData={mockPatient}
             onUpdatePatientData={handleUpdatePatientData}
+            onOpenPrescription={handleOpenPrescriptionSheet}
           />
         </div>
       </main>
@@ -168,8 +220,24 @@ export default function DentalProfilePage() {
           toothNumbers={selectedTeeth}
           existingTreatment={currentTreatment}
           onSaveTreatment={handleSaveTreatment}
+          onOpenPrescription={handleOpenPrescriptionSheet}
         />
       )}
+
+           {prescriptionContext && (
+        <PrescriptionDialog
+          open={isPrescriptionSheetOpen}
+          onOpenChange={(isOpen) => {
+            setIsPrescriptionSheetOpen(isOpen);
+            if (!isOpen) setPrescriptionContext(null);
+          }}
+          treatment={prescriptionContext.treatment}
+          patient={patientData}
+          existingPrescription={prescriptionContext.existingPrescription}
+          onSavePrescription={handleSavePrescription}
+        />
+      )}
+
     </>
   );
 }

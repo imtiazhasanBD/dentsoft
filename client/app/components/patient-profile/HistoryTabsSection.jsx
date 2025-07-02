@@ -15,6 +15,7 @@ import { mockPatient } from "@/app/lib/dentalData";
 export default function HistoryTabsSection({
   patientData,
   onEditTreatment,
+  onOpenPrescription
 }) {
   return (
     <Card className="">
@@ -41,6 +42,7 @@ export default function HistoryTabsSection({
             <TreatmentLog
               treatments={patientData.treatments}
               onEditTreatment={onEditTreatment}
+              onOpenPrescription={onOpenPrescription}
             />
           </TabsContent>
           <TabsContent value="appointments">
