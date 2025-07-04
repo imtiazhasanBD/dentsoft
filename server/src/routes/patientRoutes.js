@@ -3,13 +3,14 @@ const router = express.Router();
 const Patient = require("../models/Patient");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Create a new patient 
+// Create a new patient
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { patientId, name, age, gender, blood_group, phone, address } = req.body;
+    const { patientId, name, age, gender, blood_group, phone, address } =
+      req.body;
 
-    const exists = await Patient.findOne({ patientId});
-    
+    const exists = await Patient.findOne({ patientId });
+
     if (exists) {
       return res.status(400).json({ message: "Patient ID already exists" });
     }
@@ -30,9 +31,9 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Get all patients 
+// Get all patients
 router.get("/", authMiddleware, async (req, res) => {
-    const { search } = req.query
+  const { search } = req.query;
   try {
     let query = {};
     if (search) {
@@ -48,14 +49,19 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-
 // Get a single patient by ID
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const patient = await Patient.findOne({ patientId: req.params.id})
-     .populate("treatments")
-     .populate("prescriptions")
-     
+    const patient = await Patient.findOne({ patientId: req.params.id })
+      .populate({
+        path: "treatments",
+        populate: {
+          path: "prescriptions",
+          model: "Prescription",
+        },
+      })
+      .populate("prescriptions");
+
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);
   } catch (err) {

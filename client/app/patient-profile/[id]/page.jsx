@@ -27,7 +27,6 @@ export default function DentalProfilePage() {
   const [isPrescriptionSheetOpen, setIsPrescriptionSheetOpen] = useState(false);
   const [prescriptionContext, setPrescriptionContext] = useState(null);
 
-
   useEffect(() => {
     const fetchPatientAndInitializeTeeth = async () => {
       try {
@@ -70,9 +69,8 @@ export default function DentalProfilePage() {
   };
 
   const handleSaveTreatment = async (treatmentData) => {
-
     console.log(currentTreatment?._id);
-    
+
     try {
       const promise = currentTreatment
         ? axios.put(
@@ -96,12 +94,18 @@ export default function DentalProfilePage() {
             }
           );
       const response = await toast.promise(promise, {
-        loading: currentTreatment? "Updating treatment..." : "Creating treatment...",
-        success: currentTreatment? "Treatment updated successfully!" : "Treatment created successfully!",
+        loading: currentTreatment
+          ? "Updating treatment..."
+          : "Creating treatment...",
+        success: currentTreatment
+          ? "Treatment updated successfully!"
+          : "Treatment created successfully!",
         error: (err) => {
           return (
             <b>
-              {err.response?.data?.error || currentTreatment? "Could not update treatment." : "Could not create treatment."}
+              {err.response?.data?.error || currentTreatment
+                ? "Could not update treatment."
+                : "Could not create treatment."}
             </b>
           );
         },
@@ -124,52 +128,79 @@ export default function DentalProfilePage() {
     setPatientData(updatedData);
   };
 
-const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
+  const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
     const existingPrescription =
-      patientData.prescriptions.find(
-        (p) => p.id === treatmentForPrescription.prescriptionId
-      ) ||
-      patientData.prescriptions.find(
-        (p) => p.treatmentId === treatmentForPrescription.id
-      );
+      treatmentForPrescription.prescriptions.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt))
     setPrescriptionContext({
       treatment: treatmentForPrescription,
-      existingPrescription,
+      existingPrescription: existingPrescription[0],
     });
     setIsPrescriptionSheetOpen(true);
     setIsTreatmentDialogOpen(false);
   };
 
-  const handleSavePrescription = (prescriptionData) => {
-    setPatientData((prevData) => {
-      const prescriptionExists = prevData.prescriptions.some(
-        (p) => p.id === prescriptionData.id
-      );
-      let updatedPrescriptions;
-      if (prescriptionExists) {
-        updatedPrescriptions = prevData.prescriptions.map((p) =>
-          p.id === prescriptionData.id ? prescriptionData : p
-        );
-      } else {
-        updatedPrescriptions = [...prevData.prescriptions, prescriptionData];
+const handleSavePrescription = async (prescriptionData) => {
+  console.log(prescriptionData);
+  
+  const { patientId, nextAppointmentTime, nextAppointmentDate } = prescriptionData;
+  const time = nextAppointmentTime;
+  const date = nextAppointmentDate;
+  
+  try {
+    // Create prescription
+    const prescriptionPromise = axios.post(
+      `${process.env.NEXT_PUBLIC_PATIENT}/prescription`,
+      prescriptionData,
+      {
+        headers: {
+          Authorization: `Bearer ${Cookies.get("token")}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      // Link prescriptionId back to the treatment
-      const updatedTreatments = prevData.treatments.map((t) =>
-        t.id === prescriptionData.treatmentId
-          ? { ...t, prescriptionId: prescriptionData.id }
-          : t
+    // Create appointment if needed
+    let appointmentPromise = Promise.resolve(null);
+    if (nextAppointmentDate && nextAppointmentTime) {
+      appointmentPromise = axios.post(
+        process.env.NEXT_PUBLIC_APPOINTMENT,
+        { patientId, date, time },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+          },
+        }
       );
+    }
 
-      return {
-        ...prevData,
-        prescriptions: updatedPrescriptions,
-        treatments: updatedTreatments,
-      };
-    });
+    // Wait for both operations to complete
+    const [prescriptionResponse] = await toast.promise(
+      Promise.all([prescriptionPromise, appointmentPromise]),
+      {
+        loading: "Creating prescription and appointment...",
+        success: "Prescription created successfully!",
+        error: (err) => {
+          const error = err[0] || err; // Get the first error if array
+          return (
+            <b>
+              {error.response?.data?.error || "Could not create prescription."}
+            </b>
+          );
+        },
+      }
+    );
+
+    // Close the modal and reset context
     setIsPrescriptionSheetOpen(false);
     setPrescriptionContext(null);
-  };
+    
+    return prescriptionResponse.data;
+  } catch (error) {
+    console.error("Error in prescription handling:", error);
+    throw error;
+  }
+};
 
   if (!patientData || !patientData.teeth) {
     return (
@@ -224,7 +255,7 @@ const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
         />
       )}
 
-           {prescriptionContext && (
+      {prescriptionContext && (
         <PrescriptionDialog
           open={isPrescriptionSheetOpen}
           onOpenChange={(isOpen) => {
@@ -237,7 +268,6 @@ const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
           onSavePrescription={handleSavePrescription}
         />
       )}
-
     </>
   );
 }

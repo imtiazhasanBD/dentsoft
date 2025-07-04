@@ -125,7 +125,8 @@ export default function PrescriptionDialog({
   const handleSubmit = () => {
     const prescriptionData = {
       id: existingPrescription?.id || `PRES${Date.now()}`,
-      treatmentId: treatment?.id,
+      treatmentId: treatment?._id,
+      patientId: patient._id,
       toothNumbers: treatment?.toothNumbers || [],
       date:
         existingPrescription?.date || new Date().toISOString().split("T")[0],
@@ -134,6 +135,7 @@ export default function PrescriptionDialog({
       nextAppointmentDate: nextAppointmentDate
         ? format(nextAppointmentDate, "yyyy-MM-dd")
         : null,
+      nextAppointmentTime  
     };
     onSavePrescription(prescriptionData);
     onOpenChange(false); // Close the sheet
@@ -345,7 +347,7 @@ console.log(treatment)
           <PrintablePrescription
             ref={printableComponentRef}
             patient={patient}
-            treatment={treatment} // Contains toothSpecificDetails
+            treatment={treatment}
             prescription={{
               id: existingPrescription?.id || `PRES_PRINT_${Date.now()}`,
               date:

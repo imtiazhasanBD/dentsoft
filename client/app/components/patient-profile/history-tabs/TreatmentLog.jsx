@@ -7,6 +7,7 @@ export default function TreatmentLog({ treatments, onEditTreatment, onOpenPrescr
   if (!treatments || treatments.length === 0) {
     return <p className="text-muted-foreground p-4 text-center">No treatment history available.</p>;
   }
+console.log(treatments);
 
   return (
     <div className="overflow-x-auto">

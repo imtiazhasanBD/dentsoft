@@ -2,18 +2,24 @@ const express = require("express");
 const Prescription = require("../models/Prescription");
 const authMiddleware = require("../middleware/authMiddleware");
 const Patient = require("../models/Patient");
+const Treatment = require("../models/Treatment");
 
 const router = express.Router();
 
 // Create a new prescription
 router.post("/", authMiddleware, async (req, res) => {
-  const { patientId } = req.body;
+  const { patientId, treatmentId } = req.body;
+console.log(treatmentId);
 
   try {
     const prescription = new Prescription(req.body);
     await prescription.save();
 
     await Patient.findByIdAndUpdate(patientId, {
+      $push: { prescriptions: prescription._id },
+    });
+
+    await Treatment.findByIdAndUpdate(treatmentId, {
       $push: { prescriptions: prescription._id },
     });
 

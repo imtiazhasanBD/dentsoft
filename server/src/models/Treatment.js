@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
 const treatmentSchema = new mongoose.Schema({
-    patient: {
+  patient: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Patient',
-    required: true
+    ref: "Patient",
+    required: true,
   },
   toothNumbers: [String],
   date: {
@@ -30,21 +30,23 @@ const treatmentSchema = new mongoose.Schema({
       cost: Number,
     },
   ],
-   totalCost: {
+  totalCost: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
-   totalPaid: {
+  totalPaid: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
   },
   notes: String,
-  prescription: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Prescription",
-  },
+  prescriptions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Prescription",
+    },
+  ],
 });
 
 const Treatment = mongoose.model("Treatment", treatmentSchema);
