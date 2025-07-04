@@ -37,7 +37,7 @@ router.post("/", authMiddleware, checkAvailability, async (req, res) => {
 
     // Case 1: Direct booking with patientId
     if (patientId) {
-      const patient = await Patient.findOne({ patientId: patientId });
+      const patient = await Patient.findOne({ _id: patientId });
       console.log(patient);
 
       if (!patient) {
