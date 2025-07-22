@@ -8,14 +8,13 @@ const router = express.Router();
 
 // Create a new prescription
 router.post("/", authMiddleware, async (req, res) => {
-  const { patientId, treatmentId } = req.body;
-console.log(treatmentId);
+  const { patient_uid, patientId, treatmentId } = req.body;
 
   try {
     const prescription = new Prescription(req.body);
     await prescription.save();
 
-    await Patient.findByIdAndUpdate(patientId, {
+    await Patient.findByIdAndUpdate(patient_uid, {
       $push: { prescriptions: prescription._id },
     });
 

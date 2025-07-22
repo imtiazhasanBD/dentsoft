@@ -129,13 +129,25 @@ export default function DentalProfilePage() {
   };
 
   const handleOpenPrescriptionSheet = (treatmentForPrescription) => {
-    const existingPrescription =
-      treatmentForPrescription.prescriptions.sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt))
-    setPrescriptionContext({
-      treatment: treatmentForPrescription,
-      existingPrescription: existingPrescription[0],
-    });
+    console.log(treatmentForPrescription.treatmentId);
+
+    let existingPrescription = [];
+    if (treatmentForPrescription.prescriptions && Array.isArray(treatmentForPrescription.prescriptions)) {
+      existingPrescription = treatmentForPrescription.prescriptions.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setPrescriptionContext({
+        treatment: treatmentForPrescription,
+        existingPrescription: existingPrescription[0],
+      });
+    } else {
+      setPrescriptionContext({
+        treatment: typeof treatmentForPrescription.treatmentId === "undefined" || treatmentForPrescription.treatmentId === undefined
+          ? treatmentForPrescription
+          : treatmentForPrescription.treatmentId,
+        existingPrescription: treatmentForPrescription,
+      });
+    }
     setIsPrescriptionSheetOpen(true);
     setIsTreatmentDialogOpen(false);
   };
@@ -143,7 +155,7 @@ export default function DentalProfilePage() {
 const handleSavePrescription = async (prescriptionData) => {
   console.log(prescriptionData);
   
-  const { patientId, nextAppointmentTime, nextAppointmentDate } = prescriptionData;
+  const { patient_uid, patientId, nextAppointmentTime, nextAppointmentDate } = prescriptionData;
   const time = nextAppointmentTime;
   const date = nextAppointmentDate;
   
@@ -165,7 +177,7 @@ const handleSavePrescription = async (prescriptionData) => {
     if (nextAppointmentDate && nextAppointmentTime) {
       appointmentPromise = axios.post(
         process.env.NEXT_PUBLIC_APPOINTMENT,
-        { patientId, date, time },
+        { patient_uid, patientId, date, time },
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("token")}`,

@@ -60,7 +60,13 @@ router.get("/:id", authMiddleware, async (req, res) => {
           model: "Prescription",
         },
       })
-      .populate("prescriptions");
+      .populate({
+        path: "prescriptions",
+        populate: {
+          path: "treatmentId",
+          model: "Treatment",
+        },
+      })
 
     if (!patient) return res.status(404).json({ message: "Patient not found" });
     res.json(patient);

@@ -126,7 +126,8 @@ export default function PrescriptionDialog({
     const prescriptionData = {
       id: existingPrescription?.id || `PRES${Date.now()}`,
       treatmentId: treatment?._id,
-      patientId: patient._id,
+      patientId: patient.patientId,
+      patient_uid: patient._id,
       toothNumbers: treatment?.toothNumbers || [],
       date:
         existingPrescription?.date || new Date().toISOString().split("T")[0],
