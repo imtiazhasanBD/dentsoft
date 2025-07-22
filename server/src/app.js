@@ -31,6 +31,11 @@ app.use(process.env.PATIENT_PATH, PatientTreatmentsRoutes);
 const PatientPrescriptionRoutes = require("./routes/prescriptionRoute")
 app.use(`${process.env.PATIENT_PATH}/prescription`, PatientPrescriptionRoutes);
 
+// Patients invoices routes
+const PatientInvoicesRoutes = require("./routes/invoices")
+app.use(`${process.env.PATIENT_PATH}/invoices`, PatientInvoicesRoutes);
+
+
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
